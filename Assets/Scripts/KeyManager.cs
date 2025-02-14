@@ -4,7 +4,7 @@ using UnityEngine;
 
 public class KeyManager : MonoBehaviour
 {
-    public GameObject Inticon, Key;
+    public GameObject Inticon, Key, signOne, signTwo;
 
     void OnTriggerStay(Collider other)
     {
@@ -16,6 +16,8 @@ public class KeyManager : MonoBehaviour
                 Key.SetActive(false);
                 Door.keyFound = true;
                 Inticon.SetActive(false);
+                signOne.SetActive(true);
+                signTwo.SetActive(true);
             }
         }
     }
