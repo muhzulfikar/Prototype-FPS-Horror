@@ -5,36 +5,38 @@ using UnityEngine;
 
 public class OpenDoor : MonoBehaviour, IInteractable
 {
-    public TMP_Text InstructionText;  // Referensi ke Text untuk instruksi pintu
-    public TMP_Text NeededKeyText;  // Referensi ke Text untuk instruksi kunci dibutuhkan
-    public GameObject AnimeObject;  // Objek animasi pintu
-    public GameObject ThisTrigger;  // Trigger pintu
-    public AudioSource DoorOpenSound;  // Suara pintu terbuka
-    public float timerOpen = 3.5f;  // Durasi pintu terbuka
-    private bool Action = false;  // Menandakan apakah interaksi dengan pintu bisa dilakukan
+    public TMP_Text InstructionText;
+    public TMP_Text NeededKeyText;
+    public GameObject AnimeObject;
+    public GameObject ThisTrigger;
+    public AudioSource DoorOpenSound;
+    public float timerOpen = 3.5f;
+    private bool Action = false;
+    private bool doorOpened = false;
+    public KeyManager keyManager;
 
     void Start()
     {
-        InstructionText.gameObject.SetActive(false);  // Menyembunyikan instruksi pintu pada awalnya
-        NeededKeyText.gameObject.SetActive(false);  // Menyembunyikan instruksi kunci pada awalnya
+        InstructionText.gameObject.SetActive(false);
+        NeededKeyText.gameObject.SetActive(false);
     }
 
     void OnTriggerEnter(Collider collision)
     {
         if (collision.CompareTag("Player"))
         {
-            if (!KeyManager.HasKey)  // Jika pemain belum memiliki kunci
+            if (!doorOpened && !KeyManager.HasKey)
             {
-                NeededKeyText.gameObject.SetActive(true);  // Menampilkan instruksi kunci dibutuhkan
-                InstructionText.gameObject.SetActive(false);  // Menyembunyikan instruksi pintu
+                NeededKeyText.gameObject.SetActive(true);
+                InstructionText.gameObject.SetActive(false);
             }
-            else  // Jika pemain sudah memiliki kunci
+            else
             {
-                InstructionText.gameObject.SetActive(true);  // Menampilkan instruksi pintu                
-                NeededKeyText.gameObject.SetActive(false);  // Menyembunyikan instruksi kunci dibutuhkan
+                InstructionText.gameObject.SetActive(true);
+                NeededKeyText.gameObject.SetActive(false);
             }
 
-            Action = true;  // Menandakan bahwa pemain dapat berinteraksi dengan pintu
+            Action = true;
         }
     }
 
@@ -42,36 +44,52 @@ public class OpenDoor : MonoBehaviour, IInteractable
     {
         if (collision.CompareTag("Player"))
         {
-            InstructionText.gameObject.SetActive(false);  // Menyembunyikan instruksi pintu saat pemain keluar dari trigger pintu
-            NeededKeyText.gameObject.SetActive(false);  // Menyembunyikan instruksi kunci saat pemain keluar dari trigger pintu
-            Action = false;  // Menonaktifkan interaksi
+            InstructionText.gameObject.SetActive(false);
+            NeededKeyText.gameObject.SetActive(false);
+            Action = false;
         }
     }
 
     void Update()
     {
-        if (Input.GetKeyDown(KeyCode.E) && Action && KeyManager.HasKey)
+        if (Input.GetKeyDown(KeyCode.E) && Action && (KeyManager.HasKey || doorOpened))  // Cek apakah pintu bisa dibuka
         {
-            Interact();  // Memanggil metode Interact() jika pemain menekan E dan memiliki kunci
+            Interact();
         }
     }
 
     // Implementasi Interact dari interface IInteractable
     public void Interact()
     {
-        InstructionText.gameObject.SetActive(false);  // Menyembunyikan instruksi pintu setelah pintu dibuka
-        AnimeObject.GetComponent<Animator>().Play("door_open_out");
+        if (!doorOpened && KeyManager.HasKey)  // Jika pintu belum dibuka dan pemain memiliki kunci
+        {
+            InstructionText.gameObject.SetActive(false);
+            AnimeObject.GetComponent<Animator>().Play("door_open_out");
 
-        ThisTrigger.SetActive(false);  // Menonaktifkan trigger pintu untuk mencegah interaksi lebih lanjut
-        Action = false;
+            ThisTrigger.SetActive(false);
+            Action = false;
 
-        // Memanggil fungsi CloseDoor setelah beberapa detik
-        Invoke("CloseDoor", timerOpen);
+            // Panggil fungsi CloseDoor setelah beberapa detik
+            Invoke("CloseDoor", timerOpen);
+            doorOpened = true;
+            KeyManager.HasKey = false;
+        }
+        else if (doorOpened)
+        {
+            InstructionText.gameObject.SetActive(false);
+            AnimeObject.GetComponent<Animator>().Play("door_open_out");
+
+            ThisTrigger.SetActive(false);
+            Action = false;
+
+            // Memanggil fungsi CloseDoor setelah beberapa detik
+            Invoke("CloseDoor", timerOpen);
+        }
     }
 
     void CloseDoor()
     {
         AnimeObject.GetComponent<Animator>().Play("door_close");
-        ThisTrigger.SetActive(true);  // Menyembunyikan trigger pintu setelah pintu tertutup
+        ThisTrigger.SetActive(true);
     }
 }
